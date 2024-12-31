@@ -1,3 +1,4 @@
+import requests  # Add this import statement
 import pandas as pd
 import time
 from concurrent.futures import ThreadPoolExecutor
