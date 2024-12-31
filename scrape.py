@@ -1,11 +1,12 @@
 import requests
 import streamlit as st
+import time
 
 # Bright Data proxy credentials
-USERNAME = "brd-customer-hl_522ca348-zone-residential_proxy1"  # Replace with your username
-PASSWORD = "fsd7c8hv7bt1"  # Replace with your password
-HOST = "brd.superproxy.io"  # Proxy endpoint
-PORT = 33335  # Proxy port
+USERNAME = "brd-customer-hl_522ca348-zone-residential_proxy1"
+PASSWORD = "fsd7c8hv7bt1"
+HOST = "brd.superproxy.io"
+PORT = 33335
 
 # Proxy URL
 proxy_url = f"http://{USERNAME}:{PASSWORD}@{HOST}:{PORT}"
