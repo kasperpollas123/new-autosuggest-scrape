@@ -1,17 +1,21 @@
 import requests
 import streamlit as st
 import time
+import base64
 
 # Zyte Proxy Credentials
 ZYTE_PROXY = "http://api.zyte.com:8011"  # Use HTTP instead of HTTPS
 ZYTE_API_KEY = "a5615680ab7647bbb06769b5568dc218"  # Your Zyte API key
+
+# Encode the API key for Basic Authentication
+PROXY_AUTH = base64.b64encode(f":{ZYTE_API_KEY}".encode()).decode()
 
 # Function to get Google autosuggestions
 def get_google_autosuggestions(query):
     url = "https://www.google.com/complete/search"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Proxy-Authorization': f'Basic {ZYTE_API_KEY}'  # Add API key to proxy headers
+        'Proxy-Authorization': f'Basic {PROXY_AUTH}'  # Add API key to proxy headers
     }
     params = {
         'q': query,
