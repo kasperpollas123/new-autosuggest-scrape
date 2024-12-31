@@ -48,8 +48,15 @@ def scrape_serp(keyword):
         if response.status_code != 200:
             st.error(f"Failed to fetch SERP for '{keyword}'. Status code: {response.status_code}")
             return []
+        
+        # Debugging: Log the HTML content
+        with open("debug.html", "w", encoding="utf-8") as f:
+            f.write(response.text)
+        
         soup = BeautifulSoup(response.text, "html.parser")
         results = []
+        
+        # Updated CSS selectors for Google search results
         for result in soup.select("div.g")[:10]:  # Limit to first 10 results
             try:
                 title = result.select_one("h3").text
@@ -57,6 +64,7 @@ def scrape_serp(keyword):
                 results.append({"Keyword": keyword, "Title": title, "Snippet": snippet})
             except AttributeError:
                 continue
+        
         return results
     except requests.exceptions.RequestException as e:
         st.error(f"Request failed for '{keyword}': {e}")
