@@ -1,18 +1,22 @@
 import requests
 import streamlit as st
 import time
-import json
+import base64
+from bs4 import BeautifulSoup
 
 # Zyte API Credentials
 ZYTE_API_URL = "https://api.zyte.com/v1/extract"
 ZYTE_API_KEY = "a5615680ab7647bbb06769b5568dc218"  # Your Zyte API key
+
+# Encode the API key for Basic Authentication
+PROXY_AUTH = base64.b64encode(f":{ZYTE_API_KEY}".encode()).decode()
 
 # Function to get Google autosuggestions using Zyte API
 def get_google_autosuggestions(query):
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": f"Basic {ZYTE_API_KEY}"  # Add API key to headers
+        "Authorization": f"Basic {PROXY_AUTH}"  # Add API key to headers
     }
     payload = {
         "url": f"https://www.google.com/complete/search?q={query}&client=chrome&hl=en",
@@ -23,10 +27,12 @@ def get_google_autosuggestions(query):
         if response.status_code == 200:
             data = response.json()
             # Parse the HTML to extract autosuggestions
-            from bs4 import BeautifulSoup
             soup = BeautifulSoup(data["browserHtml"], "html.parser")
             suggestions = [suggestion.text for suggestion in soup.select("div.sbqs_c")]
             return suggestions
+        elif response.status_code == 401:
+            st.error(f"Authentication failed for '{query}'. Please check your API key.")
+            return []
         elif response.status_code == 403:
             st.warning(f"Rate limit hit for '{query}'. Retrying...")
             time.sleep(5)  # Pause before retrying
