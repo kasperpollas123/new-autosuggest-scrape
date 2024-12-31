@@ -23,10 +23,14 @@ def get_google_autosuggestions(query):
         st.error(f"Request failed for '{query}': {e}")
         return []
 
-# Function to fetch all suggestions for a single seed keyword
-def fetch_suggestions_for_seed(seed_keyword):
-    alphabet = 'abcdefghijklmnopqrstuvwxyz'
-    queries = [f"{seed_keyword} {letter}" for letter in alphabet] + [f"{letter} {seed_keyword}" for letter in alphabet]
+# Function to fetch suggestions for a seed keyword
+def fetch_suggestions_for_seed(seed_keyword, append_letters=True):
+    if append_letters:
+        alphabet = 'abcdefghijklmnopqrstuvwxyz'
+        queries = [f"{seed_keyword} {letter}" for letter in alphabet] + [f"{letter} {seed_keyword}" for letter in alphabet]
+    else:
+        queries = [seed_keyword]
+    
     suggestions = set()
     for query in queries:
         results = get_google_autosuggestions(query)
@@ -39,7 +43,8 @@ def generate_keywords(seed_keyword, depth=1, max_depth=2):
         return set()
     
     st.write(f"Generating keywords for seed: '{seed_keyword}' (Depth {depth})")
-    suggestions = fetch_suggestions_for_seed(seed_keyword)
+    append_letters = (depth == 1)  # Only append letters at depth 1
+    suggestions = fetch_suggestions_for_seed(seed_keyword, append_letters)
     all_suggestions = set(suggestions)
     
     for suggestion in suggestions:
