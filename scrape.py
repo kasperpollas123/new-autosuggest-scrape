@@ -1,12 +1,9 @@
-import requests  # Add this import statement
+import requests
+from bs4 import BeautifulSoup
 import pandas as pd
 import time
 from concurrent.futures import ThreadPoolExecutor
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
 
 # Function to get Google autosuggestions
 def get_google_autosuggestions(query):
@@ -40,25 +37,26 @@ def fetch_all_suggestions(seed_keyword):
         all_suggestions.update(suggestions)
     return sorted(all_suggestions)
 
-# Function to scrape SERP for a keyword using Selenium
+# Function to scrape SERP for a keyword
 def scrape_serp(keyword):
-    options = Options()
-    options.add_argument("--headless")  # Run in headless mode
-    options.add_argument("--disable-gpu")  # Disable GPU acceleration
-    options.add_argument("--no-sandbox")  # Disable sandboxing
-    options.add_argument("--disable-dev-shm-usage")  # Disable shared memory usage
-    driver = webdriver.Chrome(options=options)
-    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    url = f"https://www.google.com/search?q={keyword}"
     try:
-        driver.get(f"https://www.google.com/search?q={keyword}")
-        time.sleep(2)  # Wait for the page to load
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            st.error(f"Failed to fetch SERP for '{keyword}'. Status code: {response.status_code}")
+            return []
         
-        # Get the page source and parse it with BeautifulSoup
-        html = driver.page_source
-        soup = BeautifulSoup(html, "html.parser")
+        # Debugging: Log the HTML content
+        with open("debug.html", "w", encoding="utf-8") as f:
+            f.write(response.text)
+        
+        soup = BeautifulSoup(response.text, "html.parser")
         results = []
         
-        # Extract titles and snippets
+        # Updated CSS selectors for Google search results
         for result in soup.select("div.g")[:10]:  # Limit to first 10 results
             try:
                 title = result.select_one("h3").text
@@ -68,8 +66,9 @@ def scrape_serp(keyword):
                 continue
         
         return results
-    finally:
-        driver.quit()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed for '{keyword}': {e}")
+        return []
 
 # Streamlit UI
 st.title("Google Autosuggest Keyword Expander with SERP Results")
