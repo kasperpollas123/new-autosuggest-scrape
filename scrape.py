@@ -1,11 +1,17 @@
 import requests
 import streamlit as st
+import time
+
+# Zyte Proxy Credentials
+ZYTE_PROXY = "https://api.zyte.com:8011"
+ZYTE_API_KEY = "a5615680ab7647bbb06769b5568dc218"  # Your Zyte API key
 
 # Function to get Google autosuggestions
 def get_google_autosuggestions(query):
     url = "https://www.google.com/complete/search"
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Proxy-Authorization': f'Basic {ZYTE_API_KEY}'  # Add API key to proxy headers
     }
     params = {
         'q': query,
@@ -13,9 +19,18 @@ def get_google_autosuggestions(query):
         'hl': 'en'
     }
     try:
-        response = requests.get(url, headers=headers, params=params, timeout=10)
+        # Use Zyte proxy
+        proxies = {
+            "http": ZYTE_PROXY,
+            "https": ZYTE_PROXY
+        }
+        response = requests.get(url, headers=headers, params=params, proxies=proxies, timeout=10)
         if response.status_code == 200:
             return response.json()[1]
+        elif response.status_code == 403:
+            st.warning(f"Rate limit hit for '{query}'. Retrying...")
+            time.sleep(5)  # Pause before retrying
+            return get_google_autosuggestions(query)  # Retry the request
         else:
             st.error(f"Failed to fetch suggestions for '{query}'. Status code: {response.status_code}")
             return []
@@ -35,6 +50,7 @@ def fetch_suggestions_for_seed(seed_keyword, append_letters=True):
     for query in queries:
         results = get_google_autosuggestions(query)
         suggestions.update(results)
+        time.sleep(2)  # Add a delay between requests to avoid rate limiting
     return sorted(suggestions)
 
 # Recursive function to generate keywords
