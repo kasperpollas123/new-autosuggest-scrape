@@ -1,36 +1,32 @@
 import requests
 import streamlit as st
 import time
-import base64
+import json
 
-# Zyte Proxy Credentials
-ZYTE_PROXY = "http://api.zyte.com:8011"  # Use HTTP instead of HTTPS
+# Zyte API Credentials
+ZYTE_API_URL = "https://api.zyte.com/v1/extract"
 ZYTE_API_KEY = "a5615680ab7647bbb06769b5568dc218"  # Your Zyte API key
 
-# Encode the API key for Basic Authentication
-PROXY_AUTH = base64.b64encode(f":{ZYTE_API_KEY}".encode()).decode()
-
-# Function to get Google autosuggestions
+# Function to get Google autosuggestions using Zyte API
 def get_google_autosuggestions(query):
-    url = "https://www.google.com/complete/search"
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Proxy-Authorization': f'Basic {PROXY_AUTH}'  # Add API key to proxy headers
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Basic {ZYTE_API_KEY}"  # Add API key to headers
     }
-    params = {
-        'q': query,
-        'client': 'chrome',
-        'hl': 'en'
+    payload = {
+        "url": f"https://www.google.com/complete/search?q={query}&client=chrome&hl=en",
+        "browserHtml": True  # Request the rendered HTML of the page
     }
     try:
-        # Use Zyte proxy
-        proxies = {
-            "http": ZYTE_PROXY,
-            "https": ZYTE_PROXY
-        }
-        response = requests.get(url, headers=headers, params=params, proxies=proxies, timeout=10)
+        response = requests.post(ZYTE_API_URL, headers=headers, json=payload, timeout=10)
         if response.status_code == 200:
-            return response.json()[1]
+            data = response.json()
+            # Parse the HTML to extract autosuggestions
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(data["browserHtml"], "html.parser")
+            suggestions = [suggestion.text for suggestion in soup.select("div.sbqs_c")]
+            return suggestions
         elif response.status_code == 403:
             st.warning(f"Rate limit hit for '{query}'. Retrying...")
             time.sleep(5)  # Pause before retrying
