@@ -3,7 +3,7 @@ import streamlit as st
 import time
 
 # Zyte Proxy Credentials
-ZYTE_PROXY = "https://api.zyte.com:8011"
+ZYTE_PROXY = "http://api.zyte.com:8011"  # Use HTTP instead of HTTPS
 ZYTE_API_KEY = "a5615680ab7647bbb06769b5568dc218"  # Your Zyte API key
 
 # Function to get Google autosuggestions
