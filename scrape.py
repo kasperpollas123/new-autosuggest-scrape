@@ -23,35 +23,50 @@ def get_google_autosuggestions(query):
         st.error(f"Request failed for '{query}': {e}")
         return []
 
-# Function to fetch all suggestions
-def fetch_all_suggestions(seed_keyword):
+# Function to fetch all suggestions for a single seed keyword
+def fetch_suggestions_for_seed(seed_keyword):
     alphabet = 'abcdefghijklmnopqrstuvwxyz'
     queries = [f"{seed_keyword} {letter}" for letter in alphabet] + [f"{letter} {seed_keyword}" for letter in alphabet]
-    all_suggestions = set()
+    suggestions = set()
     for query in queries:
-        suggestions = get_google_autosuggestions(query)
-        all_suggestions.update(suggestions)
-    return sorted(all_suggestions)
+        results = get_google_autosuggestions(query)
+        suggestions.update(results)
+    return sorted(suggestions)
+
+# Recursive function to generate keywords
+def generate_keywords(seed_keyword, depth=1, max_depth=2):
+    if depth > max_depth:
+        return set()
+    
+    st.write(f"Generating keywords for seed: '{seed_keyword}' (Depth {depth})")
+    suggestions = fetch_suggestions_for_seed(seed_keyword)
+    all_suggestions = set(suggestions)
+    
+    for suggestion in suggestions:
+        all_suggestions.update(generate_keywords(suggestion, depth + 1, max_depth))
+    
+    return all_suggestions
 
 # Streamlit UI
 st.title("Google Autosuggest Keyword Expander")
 seed_keyword = st.text_input("Enter a seed keyword:", "dog training")
+max_depth = st.number_input("Enter the maximum recursion depth:", min_value=1, max_value=5, value=2)
 
 if st.button("Generate Keywords"):
     if seed_keyword:
-        # Fetch all suggestions
+        # Generate keywords recursively
         with st.spinner("Fetching suggestions..."):
-            suggestions = fetch_all_suggestions(seed_keyword)
+            all_suggestions = generate_keywords(seed_keyword, max_depth=max_depth)
         
         # Display the suggestions
-        if suggestions:
-            st.write(f"Found {len(suggestions)} unique keywords:")
-            st.write(suggestions)
+        if all_suggestions:
+            st.write(f"Found {len(all_suggestions)} unique keywords:")
+            st.write(sorted(all_suggestions))
             
             # Output the keywords to a text file
             keywords_file = "keywords.txt"
             with open(keywords_file, "w") as f:
-                f.write("\n".join(suggestions))
+                f.write("\n".join(sorted(all_suggestions)))
             
             # Download the keywords file
             with open(keywords_file, "rb") as f:
